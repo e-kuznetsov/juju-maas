@@ -51,6 +51,7 @@ maas $PROFILE boot-resources read
 
 maas $PROFILE machines create \
     architecture="amd64" \
+    subarchitecture="ga-18.04" \
     commission=false \
     power_type="ipmi" \
     power_parameters_power_driver=LAN_2_0 \
