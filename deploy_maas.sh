@@ -46,7 +46,7 @@ maas $PROFILE boot-resources import
 
 # Waiting for image upload to complete
 i=0
-while [ "$i" -le "30" ] ; do
+while [ $i -le 30 ] ; do
   sleep 20
   ((i++))
   if [[ `maas $PROFILE boot-resources is-importing` == "false" ]]; then
