@@ -47,13 +47,14 @@ maas $PROFILE boot-resources import
 # Workaround for https://bugs.launchpad.net/maas/+bug/1806763
 sleep 120
 i=0
-while [ "$i" -le 30 ] ; do
+while [ "$i" -le "30" ] ; do
   ((i++))
   if ! sudo lsof | grep -c "images-maas-io" ; then
-    break 
+    break
   fi
   sleep 10
 done
+
 sleep 30
 
 maas $PROFILE machines create \
