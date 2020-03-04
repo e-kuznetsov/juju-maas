@@ -54,6 +54,7 @@ while [ "$i" -le 30 ] ; do
   fi
   sleep 10
 done
+sleep 30
 
 maas $PROFILE machines create \
     architecture="amd64/generic" \
