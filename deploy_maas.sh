@@ -13,15 +13,9 @@ function set_ssh_keys() {
 
 sudo apt update
 sudo apt-get install snapd -y
-# sudo snap install maas --channel=2.7
-# sudo maas init --mode all \
-#    --maas-url "http://192.168.50.5:5240/MAAS" \
-#    --admin-username admin \
-#    --admin-password 12349876 \
-#    --admin-email ${USER}@domain.ltd
-
-sudo apt-get install maas -y
-sudo maas init \
+sudo snap install maas --channel=2.7
+sudo maas init --mode all \
+    --maas-url "http://192.168.50.5:5240/MAAS" \
     --admin-username admin \
     --admin-password 12349876 \
     --admin-email ${USER}@domain.ltd
@@ -49,7 +43,11 @@ maas $PROFILE ipranges create type=dynamic \
 maas $PROFILE vlan update 0 0 dhcp_on=True primary_rack=maas-dev
 
 maas $PROFILE boot-resources import
+
+#https://bugs.launchpad.net/maas/+bug/1806763
 sleep 30
+
+ps axu
 
 maas $PROFILE boot-resources read
 
