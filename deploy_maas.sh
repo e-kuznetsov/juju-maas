@@ -1,4 +1,4 @@
-#!/bin/bash -xeE
+#!/bin/bash -xe
 set -o pipefail
 
 my_file="$(readlink -e "$0")"
@@ -44,11 +44,11 @@ maas $PROFILE vlan update 0 0 dhcp_on=True primary_rack=maas-dev
 
 maas $PROFILE boot-resources import
 
-# Waiting for image upload to complete
+# Waiting for image downoad to complete
 i=0
 while [ $i -le 30 ] ; do
   sleep 20
-  ((i++))
+  i=$((i+1))
   if [[ `maas $PROFILE boot-resources is-importing` == "false" ]]; then
     break
   fi
