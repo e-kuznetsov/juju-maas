@@ -12,7 +12,7 @@ function set_ssh_keys() {
 }
 
 sudo apt update
-sudo apt-get install snapd -y
+sudo apt-get install snapd lsof -y
 sudo snap install maas --channel=2.7
 sudo maas init --mode all \
     --maas-url "http://192.168.50.5:5240/MAAS" \
@@ -44,17 +44,20 @@ maas $PROFILE vlan update 0 0 dhcp_on=True primary_rack=maas-dev
 
 maas $PROFILE boot-resources import
 
-#https://bugs.launchpad.net/maas/+bug/1806763
-sleep 30
-
-ps axu
-
-maas $PROFILE boot-resources read
+# Workaround for https://bugs.launchpad.net/maas/+bug/1806763
+sleep 120
+i=0
+while [ "$i" -le 30 ] ; do
+  ((i++))
+  if ! sudo lsof | grep -c "images-maas-io" ; then
+    break 
+  fi
+  sleep 10
+done
 
 maas $PROFILE machines create \
-    architecture="amd64" \
-    subarchitecture="generic"
-    min_hwe_kernel="ga-18.04" \
+    architecture="amd64/generic" \
+    hwe_kernel="ga-18.04" \
     power_type="ipmi" \
     power_parameters_power_driver=LAN_2_0 \
     power_parameters_power_user=ADMIN \
