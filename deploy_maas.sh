@@ -47,12 +47,13 @@ maas $PROFILE ipranges create type=dynamic \
 maas $PROFILE vlan update 0 0 dhcp_on=True primary_rack=maas-dev
 
 maas $PROFILE boot-resources import
+sleep 30
+
 maas $PROFILE boot-resources read
 
 maas $PROFILE machines create \
     architecture="amd64" \
     subarchitecture="ga-18.04" \
-    commission=false \
     power_type="ipmi" \
     power_parameters_power_driver=LAN_2_0 \
     power_parameters_power_user=ADMIN \
