@@ -46,13 +46,8 @@ maas $PROFILE ipranges create type=dynamic \
 
 maas $PROFILE vlan update 0 0 dhcp_on=True primary_rack=maas-dev
 
-#maas $PROFILE boot-source-selections create 1 \
-#    os="ubuntu" release="bionic" arches="amd64" \
-#    subarches="*" labels="*"
-
 maas $PROFILE boot-resources import
 maas $PROFILE boot-resources read
-
 
 maas $PROFILE machines create \
     architecture="amd64" \
