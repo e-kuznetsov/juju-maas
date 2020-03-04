@@ -44,17 +44,15 @@ maas $PROFILE vlan update 0 0 dhcp_on=True primary_rack=maas-dev
 
 maas $PROFILE boot-resources import
 
-# Workaround for https://bugs.launchpad.net/maas/+bug/1806763
-# sleep 120
+# Waiting for image upload to complete
 i=0
 while [ "$i" -le "30" ] ; do
   sleep 20
   ((i++))
-  if ! sudo lsof | grep "images-maas-io"; then
+  if [[ `maas $PROFILE boot-resources is-importing` == "false" ]]; then
     break
   fi
 done
-
 sleep 30
 
 maas $PROFILE machines create \
