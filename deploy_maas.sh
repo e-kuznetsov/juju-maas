@@ -13,9 +13,15 @@ function set_ssh_keys() {
 
 sudo apt update
 sudo apt-get install snapd -y
-sudo snap install maas --channel=2.7
-sudo maas init --mode all \
-    --maas-url "http://192.168.50.5:5240/MAAS" \
+# sudo snap install maas --channel=2.7
+# sudo maas init --mode all \
+#    --maas-url "http://192.168.50.5:5240/MAAS" \
+#    --admin-username admin \
+#    --admin-password 12349876 \
+#    --admin-email ${USER}@domain.ltd
+
+sudo apt-get install maas -y
+sudo maas init \
     --admin-username admin \
     --admin-password 12349876 \
     --admin-email ${USER}@domain.ltd
@@ -49,6 +55,7 @@ maas $PROFILE boot-resources read
 
 maas $PROFILE machines create \
     architecture="amd64" \
+    subarchitecture="generic"
     min_hwe_kernel="ga-18.04" \
     power_type="ipmi" \
     power_parameters_power_driver=LAN_2_0 \
