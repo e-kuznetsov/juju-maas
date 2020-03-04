@@ -1,4 +1,4 @@
-#!/bin/bash -xe
+#!/bin/bash -xeE
 set -o pipefail
 
 my_file="$(readlink -e "$0")"
@@ -45,14 +45,14 @@ maas $PROFILE vlan update 0 0 dhcp_on=True primary_rack=maas-dev
 maas $PROFILE boot-resources import
 
 # Workaround for https://bugs.launchpad.net/maas/+bug/1806763
-sleep 120
+# sleep 120
 i=0
 while [ "$i" -le "30" ] ; do
+  sleep 20
   ((i++))
-  if ! sudo lsof | grep -c "images-maas-io" ; then
+  if ! sudo lsof | grep "images-maas-io"; then
     break
   fi
-  sleep 10
 done
 
 sleep 30
