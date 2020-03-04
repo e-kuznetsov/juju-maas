@@ -13,11 +13,7 @@ function set_ssh_keys() {
 
 sudo apt update
 sudo apt-get install snapd -y
-export PATH=$PATH:/snap/bin
-
 sudo snap install maas --channel=2.7
-
-
 sudo maas init --mode all \
     --maas-url "http://192.168.50.5:5240/MAAS" \
     --admin-username admin \
@@ -25,7 +21,7 @@ sudo maas init --mode all \
     --admin-email ${USER}@domain.ltd
 
 #login
-
+export PATH=$PATH:/snap/bin
 PROFILE="admin"
 MAAS_URL="http://192.168.50.5:5240/MAAS/api/2.0"
 API_KEY_FILE=api_key
@@ -53,7 +49,7 @@ maas $PROFILE boot-resources read
 
 maas $PROFILE machines create \
     architecture="amd64" \
-    subarchitecture="ga-18.04" \
+    min_hwe_kernel="ga-18.04" \
     power_type="ipmi" \
     power_parameters_power_driver=LAN_2_0 \
     power_parameters_power_user=ADMIN \
