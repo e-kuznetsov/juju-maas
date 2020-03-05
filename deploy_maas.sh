@@ -12,7 +12,7 @@ IPMI_IPS="192.168.50.20 192.168.50.21 192.168.50.22 192.168.50.23 192.168.50.24"
 IPMI_USER="ADMIN"
 IPMI_PASS="ADMIN"
 IPMI_POWER_DRIVER="LAN_2_0"
-DHCP_RESERVATION=("192.168.50.100" "192.168.50.255")
+DHCP_RESERVATION=("192.168.50.100" "192.168.50.254")
 
 # determined variables
 DISTRO=$(cat /etc/*release | egrep '^ID=' | awk -F= '{print $2}' | tr -d \")
@@ -32,17 +32,16 @@ sudo apt-get install snapd jq -y
 sudo snap install maas --channel=2.7
 sudo maas init --mode all \
     --maas-url "http://${NODE_IP}:5240/MAAS" \
-    --admin-username ${MAAS_ADMIN} \
-    --admin-password ${MAAS_PASS} \
-    --admin-email ${MAAS_ADMIN_MAIL}
+    --admin-username "${MAAS_ADMIN}" \
+    --admin-password "${MAAS_PASS}" \
+    --admin-email "${MAAS_ADMIN_MAIL}"
 
 # login
-export PATH=$PATH:/snap/bin
-PROFILE="admin"
+export PATH="$PATH:/snap/bin"
+PROFILE="${MAAS_ADMIN}"
 MAAS_URL="http://${NODE_IP}:5240/MAAS/api/2.0"
-API_KEY_FILE=api_key
-sudo maas apikey --username=$PROFILE > $API_KEY_FILE
-maas login $PROFILE $MAAS_URL - < $API_KEY_FILE
+sudo maas apikey --username="$PROFILE" > ${MAAS_ADMIN}_API_KEY
+maas login $PROFILE $MAAS_URL - < ${MAAS_ADMIN}_API_KEY
 
 # Add public key to user "admin"
 set_ssh_keys
@@ -54,8 +53,7 @@ maas $PROFILE maas set-config name=upstream_dns value=$UPSTREAM_DNS
 
 # Configure dhcp
 maas $PROFILE ipranges create type=dynamic \
-    start_ip=${DHCP_RESERVATION[0]} end_ip=${DHCP_RESERVATION[1]} \
-    comment='This is a reserved dynamic range'
+    start_ip=${DHCP_RESERVATION[0]} end_ip=${DHCP_RESERVATION[1]}
 maas $PROFILE vlan update 0 0 dhcp_on=True primary_rack=maas-dev
 
 # start import default images
@@ -70,7 +68,9 @@ while [ $i -le 30 ] ; do
     break
   fi
 done
-sleep 30
+
+# Wait image sync on controller
+sleep 15
 
 for n in $IPMI_IPS ; do 
   maas $PROFILE machines create \
