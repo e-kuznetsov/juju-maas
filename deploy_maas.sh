@@ -1,8 +1,12 @@
 #!/bin/bash -xe
 set -o pipefail
 
-my_file="$(readlink -e "$0")"
-my_dir="$(dirname $my_file)"
+function set_ssh_keys() {
+  [ ! -d ~/.ssh ] && mkdir ~/.ssh && chmod 0700 ~/.ssh
+  [ ! -f ~/.ssh/id_rsa ] && ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -N ''
+  [ ! -f ~/.ssh/authorized_keys ] && touch ~/.ssh/authorized_keys && chmod 0600 ~/.ssh/authorized_keys
+  grep "$(<~/.ssh/id_rsa.pub)" ~/.ssh/authorized_keys -q || cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+}
 
 # Install tools
 sudo apt-get update
@@ -26,13 +30,6 @@ IPMI_PASS=${IPMI_PASS:-"ADMIN"}
 IPMI_POWER_DRIVER=${IPMI_POWER_DRIVER:-"LAN_2_0"}
 DHCP_RESERVATION_IP_START=${DHCP_RESERVATION_IP_START:-`echo ${SUBNET_IPS[@]:(-2):1}`}
 DHCP_RESERVATION_IP_END=${DHCP_RESERVATION_IP_END:-`echo ${SUBNET_IPS[@]:(-64):1}`}
-
-function set_ssh_keys() {
-  [ ! -d ~/.ssh ] && mkdir ~/.ssh && chmod 0700 ~/.ssh
-  [ ! -f ~/.ssh/id_rsa ] && ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -N ''
-  [ ! -f ~/.ssh/authorized_keys ] && touch ~/.ssh/authorized_keys && chmod 0600 ~/.ssh/authorized_keys
-  grep "$(<~/.ssh/id_rsa.pub)" ~/.ssh/authorized_keys -q || cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
-}
 
 # Install MAAS 2.7 and tools
 sudo snap install maas --channel=2.7
@@ -59,7 +56,7 @@ maas $PROFILE maas set-config name=upstream_dns value=$UPSTREAM_DNS
 
 # Configure dhcp
 maas $PROFILE ipranges create type=dynamic \
-    start_ip=${DHCP_RESERVATION[0]} end_ip=${DHCP_RESERVATION[1]}
+    start_ip=${DHCP_RESERVATION_IP_START} end_ip=${DHCP_RESERVATION_IP_END}
 maas $PROFILE vlan update 0 0 dhcp_on=True primary_rack=maas-dev
 
 # Waiting for images downoad to complete
