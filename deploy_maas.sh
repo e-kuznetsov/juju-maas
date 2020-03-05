@@ -8,9 +8,10 @@ function set_ssh_keys() {
   grep "$(<~/.ssh/id_rsa.pub)" ~/.ssh/authorized_keys -q || cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
 }
 
-# Install tools
+# Install MAAS and tools
 sudo apt-get update
 sudo apt-get install snapd jq prips netmask -y
+sudo snap install maas --channel=2.7
 
 # Determined variables
 PHYS_INT=`ip route get 1 | grep -o 'dev.*' | awk '{print($2)}'`
@@ -19,7 +20,7 @@ NODE_IP_WSUBNET=`ip addr show dev $PHYS_INT | grep 'inet ' | awk '{print $2}' | 
 NODE_SUBNET=`netmask $NODE_IP_WSUBNET`
 readarray -t SUBNET_IPS <<< "$(prips $NODE_SUBNET)"
 
-# User variables
+# MAAS variables
 MAAS_ADMIN=${MAAS_ADMIN:-"admin"}
 MAAS_PASS=${MAAS_PASS:-"admin"}
 MAAS_ADMIN_MAIL=${MAAS_ADMIN_MAIL:-"admin@maas.tld"}
@@ -33,8 +34,7 @@ IPMI_IPS=${IPMI_IPS:-"192.168.50.20 192.168.50.21 192.168.50.22 192.168.50.23 19
 IPMI_USER=${IPMI_USER:-"ADMIN"}
 IPMI_PASS=${IPMI_PASS:-"ADMIN"}
 
-# Install MAAS 2.7 and tools
-sudo snap install maas --channel=2.7
+# MAAS init
 sudo maas init --mode all \
     --maas-url "http://${NODE_IP}:5240/MAAS" \
     --admin-username "${MAAS_ADMIN}" \
@@ -64,7 +64,7 @@ maas $PROFILE vlan update 0 0 dhcp_on=True primary_rack=maas-dev
 # Waiting for images downoad to complete
 maas $PROFILE boot-resources import
 i=0
-while [ $i -le 6 ] ; do
+while [ $i -le 30 ] ; do
   sleep 20
   i=$((i+1))
   if [[ `maas $PROFILE boot-resources is-importing` == "false" ]]; then
@@ -82,8 +82,9 @@ while [ $i -le 30 ] ; do
 done
 
 # Wait image sync on controller
-sleep 15
+sleep 30
 
+# Add machines
 for n in $IPMI_IPS ; do 
   maas $PROFILE machines create \
       architecture="amd64/generic" \
@@ -93,4 +94,20 @@ for n in $IPMI_IPS ; do
       power_parameters_power_user=${IPMI_USER} \
       power_parameters_power_pass=${IPMI_PASS} \
       power_parameters_power_address=${n}
+done
+
+# Timeout for commissioning
+sleep 180
+
+# Waiting for readiness
+i=0
+while [ $i -le 30 ] ; do
+  MACHINES_STATUS=`maas $PROFILE machines read | jq -r '.[] | .status_name'`
+  READY=`echo "$MACHINES_STATUS" | grep -c "Ready" | true`
+  if [ "$READY" -ge 5 ]]; then
+    echo "MAAS Ready"
+    break
+  fi
+  sleep 30
+  i=$((i+1))
 done
