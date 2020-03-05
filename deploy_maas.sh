@@ -58,13 +58,21 @@ maas $PROFILE vlan update 0 0 dhcp_on=True primary_rack=maas-dev
 
 # start import default images
 maas $PROFILE boot-resources import
+i=0
+while [ $i -le 5 ] ; do
+  sleep 20
+  i=$((i+1))
+  if [[ `maas $PROFILE boot-resources is-importing` == "false" ]]; then
+    break
+  fi
+done
 
-# Waiting for default images downoad to complete
+# Waiting for images downoad to complete
 i=0
 while [ $i -le 30 ] ; do
   sleep 20
   i=$((i+1))
-  if [[ `maas $PROFILE boot-resources is-importing` == "false" ]]; then
+  if ! sudo lsof | grep -c "images.maas.io" ; then
     break
   fi
 done
