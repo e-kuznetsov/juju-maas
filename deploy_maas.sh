@@ -106,7 +106,7 @@ while [ $i -le 30 ] ; do
   MASHINES_STATUS=`maas $PROFILE machines read | jq -r '.[] | .status_name'`
   if echo "$MASHINES_STATUS" | grep -q "Ready"; then
     READY_COUNT=`echo "$MASHINES_STATUS" | grep -c "Ready"`
-    if [ "$READY_COUNT" -ge 5 ]]; then
+    if [ "$READY_COUNT" -ge 5 ]; then
       echo "MAAS Ready"
       break
     fi
