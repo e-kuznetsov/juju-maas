@@ -62,6 +62,7 @@ maas $PROFILE ipranges create type=dynamic \
 maas $PROFILE vlan update 0 0 dhcp_on=True primary_rack=maas-dev
 
 # Waiting for images downoad to complete
+maas $PROFILE boot-resources read
 maas $PROFILE boot-resources import
 i=0
 while [ $i -le 30 ] ; do
@@ -71,6 +72,8 @@ while [ $i -le 30 ] ; do
     break
   fi
 done
+maas $PROFILE boot-resources read
+sleep 15
 
 i=0
 while [ $i -le 30 ] ; do
@@ -80,10 +83,11 @@ while [ $i -le 30 ] ; do
     break
   fi
 done
+maas $PROFILE boot-resources read
 
 # Wait image sync on controller
 sleep 30
-
+maas $PROFILE boot-resources read
 # Add machines
 for n in $IPMI_IPS ; do 
   maas $PROFILE machines create \
@@ -95,7 +99,7 @@ for n in $IPMI_IPS ; do
       power_parameters_power_pass=${IPMI_PASS} \
       power_parameters_power_address=${n}
 done
-
+exit 0
 # Timeout for commissioning
 sleep 180
 
@@ -103,7 +107,7 @@ sleep 180
 i=0
 while [ $i -le 30 ] ; do
   MACHINES_STATUS=`maas $PROFILE machines read | jq -r '.[] | .status_name'`
-  READY=`echo "$MACHINES_STATUS" | grep -c "Ready" | true`
+  READY=`echo "$MACHINES_STATUS" | grep -c "Ready"`
   if [ "$READY" -ge 5 ]]; then
     echo "MAAS Ready"
     break
