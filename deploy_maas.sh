@@ -4,20 +4,28 @@ set -o pipefail
 my_file="$(readlink -e "$0")"
 my_dir="$(dirname $my_file)"
 
+# Install tools
+sudo apt-get update
+sudo apt-get install snapd jq prips netmask -y
+
+# determined variables
+PHYS_INT=`ip route get 1 | grep -o 'dev.*' | awk '{print($2)}'`
+NODE_IP=`ip addr show dev $PHYS_INT | grep 'inet ' | awk '{print $2}' | head -n 1 | cut -d '/' -f 1`
+NODE_IP_WSUBNET=`ip addr show dev $PHYS_INT | grep 'inet ' | awk '{print $2}' | head -n 1`
+NODE_SUBNET=`netmask $NODE_IP_WSUBNET`
+readarray -t SUBNET_IPS <<< "$(prips $NODE_SUBNET)"
+
+# user variables
 MAAS_ADMIN=${MAAS_ADMIN:-"admin"}
 MAAS_PASS=${MAAS_PASS:-"admin"}
 MAAS_ADMIN_MAIL=${MAAS_ADMIN_MAIL:-"admin@maas.tld"}
-UPSTREAM_DNS="8.8.8.8"
-IPMI_IPS="192.168.50.20 192.168.50.21 192.168.50.22 192.168.50.23 192.168.50.24"
-IPMI_USER="ADMIN"
-IPMI_PASS="ADMIN"
-IPMI_POWER_DRIVER="LAN_2_0"
-DHCP_RESERVATION=("192.168.50.100" "192.168.50.254")
-
-# determined variables
-DISTRO=$(cat /etc/*release | egrep '^ID=' | awk -F= '{print $2}' | tr -d \")
-PHYS_INT=`ip route get 1 | grep -o 'dev.*' | awk '{print($2)}'`
-NODE_IP=`ip addr show dev $PHYS_INT | grep 'inet ' | awk '{print $2}' | head -n 1 | cut -d '/' -f 1`
+UPSTREAM_DNS=${UPSTREAM_DNS:-"8.8.8.8"}
+IPMI_IPS=${IPMI_IPS:-"192.168.50.20 192.168.50.21 192.168.50.22 192.168.50.23 192.168.50.24"}
+IPMI_USER=${IPMI_USER:-"ADMIN"}
+IPMI_PASS=${IPMI_PASS:-"ADMIN"}
+IPMI_POWER_DRIVER=${IPMI_POWER_DRIVER:-"LAN_2_0"}
+DHCP_RESERVATION_IP_START=${DHCP_RESERVATION_IP_START:-`echo ${SUBNET_IPS[@]:(-2):1}`}
+DHCP_RESERVATION_IP_END=${DHCP_RESERVATION_IP_END:-`echo ${SUBNET_IPS[@]:(-64):1}`}
 
 function set_ssh_keys() {
   [ ! -d ~/.ssh ] && mkdir ~/.ssh && chmod 0700 ~/.ssh
@@ -26,9 +34,7 @@ function set_ssh_keys() {
   grep "$(<~/.ssh/id_rsa.pub)" ~/.ssh/authorized_keys -q || cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
 }
 
-# Install MAAS 2.7
-sudo apt update
-sudo apt-get install snapd jq -y
+# Install MAAS 2.7 and tools
 sudo snap install maas --channel=2.7
 sudo maas init --mode all \
     --maas-url "http://${NODE_IP}:5240/MAAS" \
