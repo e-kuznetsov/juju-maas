@@ -61,33 +61,30 @@ maas $PROFILE ipranges create type=dynamic \
     start_ip=${DHCP_RESERVATION_IP_START} end_ip=${DHCP_RESERVATION_IP_END}
 maas $PROFILE vlan update 0 0 dhcp_on=True primary_rack=maas-dev
 
-# Waiting for images downoad to complete
-maas $PROFILE boot-resources read
-maas $PROFILE boot-resources import
+#Import may fail without any error messages
 i=0
 while [ $i -le 30 ] ; do
-  sleep 20
+  maas $PROFILE boot-resources import
   i=$((i+1))
-  if [[ `maas $PROFILE boot-resources is-importing` == "false" ]]; then
+  sleep 5
+  if maas $PROFILE boot-resources read | grep -q "ga-18.04"; then
     break
   fi
 done
-maas $PROFILE boot-resources read
-sleep 15
 
+# Waiting for images downoad to complete
 i=0
 while [ $i -le 30 ] ; do
   sleep 20
   i=$((i+1))
-  if ! sudo lsof | grep -c "images-maas-io" ; then
+  if maas $PROFILE boot-resources is-importing | grep 'false'; then
     break
   fi
 done
-maas $PROFILE boot-resources read
 
 # Wait image sync on controller
 sleep 30
-maas $PROFILE boot-resources read
+
 # Add machines
 for n in $IPMI_IPS ; do 
   maas $PROFILE machines create \
@@ -99,18 +96,20 @@ for n in $IPMI_IPS ; do
       power_parameters_power_pass=${IPMI_PASS} \
       power_parameters_power_address=${n}
 done
-exit 0
+
 # Timeout for commissioning
 sleep 180
 
 # Waiting for readiness
 i=0
 while [ $i -le 30 ] ; do
-  MACHINES_STATUS=`maas $PROFILE machines read | jq -r '.[] | .status_name'`
-  READY=`echo "$MACHINES_STATUS" | grep -c "Ready"`
-  if [ "$READY" -ge 5 ]]; then
-    echo "MAAS Ready"
-    break
+  MASHINES_STATUS=`maas $PROFILE machines read | jq -r '.[] | .status_name'`
+  if echo "$MASHINES_STATUS" | grep -q "Ready"; then
+    READY_COUNT=`echo "$MASHINES_STATUS" | grep -c "Ready"`
+    if [ "$READY_COUNT" -ge 5 ]]; then
+      echo "MAAS Ready"
+      break
+    fi
   fi
   sleep 30
   i=$((i+1))
