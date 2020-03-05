@@ -12,24 +12,26 @@ function set_ssh_keys() {
 sudo apt-get update
 sudo apt-get install snapd jq prips netmask -y
 
-# determined variables
+# Determined variables
 PHYS_INT=`ip route get 1 | grep -o 'dev.*' | awk '{print($2)}'`
 NODE_IP=`ip addr show dev $PHYS_INT | grep 'inet ' | awk '{print $2}' | head -n 1 | cut -d '/' -f 1`
 NODE_IP_WSUBNET=`ip addr show dev $PHYS_INT | grep 'inet ' | awk '{print $2}' | head -n 1`
 NODE_SUBNET=`netmask $NODE_IP_WSUBNET`
 readarray -t SUBNET_IPS <<< "$(prips $NODE_SUBNET)"
 
-# user variables
+# User variables
 MAAS_ADMIN=${MAAS_ADMIN:-"admin"}
 MAAS_PASS=${MAAS_PASS:-"admin"}
 MAAS_ADMIN_MAIL=${MAAS_ADMIN_MAIL:-"admin@maas.tld"}
 UPSTREAM_DNS=${UPSTREAM_DNS:-"8.8.8.8"}
+DHCP_RESERVATION_IP_START=${DHCP_RESERVATION_IP_START:-`echo ${SUBNET_IPS[@]:(-64):1}`}
+DHCP_RESERVATION_IP_END=${DHCP_RESERVATION_IP_END:-`echo ${SUBNET_IPS[@]:(-2):1}`}
+
+# Nodes for commissioning
+IPMI_POWER_DRIVER=${IPMI_POWER_DRIVER:-"LAN_2_0"}
 IPMI_IPS=${IPMI_IPS:-"192.168.50.20 192.168.50.21 192.168.50.22 192.168.50.23 192.168.50.24"}
 IPMI_USER=${IPMI_USER:-"ADMIN"}
 IPMI_PASS=${IPMI_PASS:-"ADMIN"}
-IPMI_POWER_DRIVER=${IPMI_POWER_DRIVER:-"LAN_2_0"}
-DHCP_RESERVATION_IP_START=${DHCP_RESERVATION_IP_START:-`echo ${SUBNET_IPS[@]:(-64):1}`}
-DHCP_RESERVATION_IP_END=${DHCP_RESERVATION_IP_END:-`echo ${SUBNET_IPS[@]:(-2):1}`}
 
 # Install MAAS 2.7 and tools
 sudo snap install maas --channel=2.7
@@ -62,13 +64,20 @@ maas $PROFILE vlan update 0 0 dhcp_on=True primary_rack=maas-dev
 # Waiting for images downoad to complete
 maas $PROFILE boot-resources import
 i=0
-while [ $i -le 30 ] ; do
+while [ $i -le 6 ] ; do
   sleep 20
   i=$((i+1))
   if [[ `maas $PROFILE boot-resources is-importing` == "false" ]]; then
-    if ! sudo lsof | grep -c "images.maas.io" ; then
-      break
-    fi
+    break
+  fi
+done
+
+i=0
+while [ $i -le 30 ] ; do
+  sleep 20
+  i=$((i+1))
+  if ! sudo lsof | grep -c "images-maas-io" ; then
+    break
   fi
 done
 
