@@ -67,7 +67,7 @@ i=0
 while [ $i -le 30 ] ; do
   maas $PROFILE boot-resources import
   i=$((i+1))
-  sleep 5
+  sleep 15
   if maas $PROFILE boot-resources read | grep -q "ga-18.04"; then
     break
   fi
@@ -79,10 +79,11 @@ while [ $i -le 30 ] ; do
   sleep 20
   i=$((i+1))
   if maas $PROFILE boot-resources is-importing | grep 'false'; then
+    sleep 15
     break
   fi
 done
-sleep 15
+
 
 # Add machines
 for n in $IPMI_IPS ; do 
