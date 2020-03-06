@@ -85,7 +85,7 @@ while [ $i -le 30 ] ; do
   fi
 done
 
-
+maas $PROFILE boot-resource read 1
 # Add machines
 for n in $IPMI_IPS ; do 
   maas $PROFILE machines create \
