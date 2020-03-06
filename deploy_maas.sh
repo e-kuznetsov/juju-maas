@@ -100,15 +100,15 @@ done
 sleep 180
 i=0
 while [ $i -le 30 ] ; do
-  MASHINES_STATUS=`maas $PROFILE machines read | jq -r '.[] | .status_name'`
-  MASHINES_COUNT=`echo "$MASHINES_STATUS" | wc -l`
-  if [ -z $MASHINES_STATUS ]; then
+  MACHINES_STATUS=`maas $PROFILE machines read | jq -r '.[] | .status_name'`
+  MACHINES_COUNT=`echo "$MACHINES_STATUS" | wc -l`
+  if [ -z $MACHINES_STATUS ]; then
     echo "MAAS setup is complete, but there are no any ready-to-use machines"
     exit 0
   fi
-  if echo "$MASHINES_STATUS" | grep -q "Ready"; then    
-    READY_COUNT=`echo "$MASHINES_STATUS" | grep -c "Ready"`
-    if [ "$READY_COUNT" -ge "$MASHINES_COUNT" ]; then
+  if echo "$MACHINES_STATUS" | grep -q "Ready"; then    
+    READY_COUNT=`echo "$MACHINES_STATUS" | grep -c "Ready"`
+    if [ "$READY_COUNT" -ge "$MACHINES_COUNT" ]; then
       echo "MAAS READY"
       COMMISSIONING="success"
       break
