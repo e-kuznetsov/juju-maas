@@ -69,6 +69,7 @@ while [ $i -le 30 ] ; do
   i=$((i+1))
   sleep 15
   if maas $PROFILE boot-resources read | grep -q "ga-18.04"; then
+    maas $PROFILE boot-resource read 1
     break
   fi
 done
