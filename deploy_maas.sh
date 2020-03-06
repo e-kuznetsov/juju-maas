@@ -102,8 +102,9 @@ i=0
 while [ $i -le 30 ] ; do
   MASHINES_STATUS=`maas $PROFILE machines read | jq -r '.[] | .status_name'`
   MASHINES_COUNT=`echo "$MASHINES_STATUS" | wc -l`
-  if [ "$MASHINES_COUNT" -eq 0 ]; then
+  if [ -z $MASHINES_STATUS ]; then
     echo "MAAS setup is complete, but there are no any ready-to-use machines"
+    break
   fi
   if echo "$MASHINES_STATUS" | grep -q "Ready"; then    
     READY_COUNT=`echo "$MASHINES_STATUS" | grep -c "Ready"`
