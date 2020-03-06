@@ -84,6 +84,11 @@ while [ $i -le 30 ] ; do
   fi
 done
 
+if [ -z "$IPMI_IPS" ]; then
+  echo "MAAS setup is complete, but there are no any ready-to-use machines"
+  exit 0
+fi
+
 # Add machines
 for n in $IPMI_IPS ; do 
   maas $PROFILE machines create \
@@ -102,10 +107,6 @@ i=0
 while [ $i -le 30 ] ; do
   MACHINES_STATUS=`maas $PROFILE machines read | jq -r '.[] | .status_name'`
   MACHINES_COUNT=`echo "$MACHINES_STATUS" | wc -l`
-  if [ -z $MACHINES_STATUS ]; then
-    echo "MAAS setup is complete, but there are no any ready-to-use machines"
-    exit 0
-  fi
   if echo "$MACHINES_STATUS" | grep -q "Ready"; then    
     READY_COUNT=`echo "$MACHINES_STATUS" | grep -c "Ready"`
     if [ "$READY_COUNT" -ge "$MACHINES_COUNT" ]; then
