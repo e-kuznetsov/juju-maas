@@ -30,7 +30,7 @@ DHCP_RESERVATION_IP_END=${DHCP_RESERVATION_IP_END:-`echo ${SUBNET_IPS[@]:(-2):1}
 
 # Nodes for commissioning
 IPMI_POWER_DRIVER=${IPMI_POWER_DRIVER:-"LAN_2_0"}
-IPMI_IPS=${IPMI_IPS:-"192.168.50.20 192.168.50.21 192.168.50.22 192.168.50.23 192.168.50.24"}
+IPMI_IPS=${IPMI_IPS:-""}
 IPMI_USER=${IPMI_USER:-"ADMIN"}
 IPMI_PASS=${IPMI_PASS:-"ADMIN"}
 
@@ -61,7 +61,8 @@ maas $PROFILE ipranges create type=dynamic \
     start_ip=${DHCP_RESERVATION_IP_START} end_ip=${DHCP_RESERVATION_IP_END}
 maas $PROFILE vlan update 0 0 dhcp_on=True primary_rack=maas-dev
 
-#Import may fail without any error messages
+# Import images. 
+# Import may fail without any error messages, loop is workaround.
 i=0
 while [ $i -le 30 ] ; do
   maas $PROFILE boot-resources import
@@ -81,9 +82,7 @@ while [ $i -le 30 ] ; do
     break
   fi
 done
-
-# Wait image sync on controller
-sleep 30
+sleep 15
 
 # Add machines
 for n in $IPMI_IPS ; do 
@@ -97,20 +96,24 @@ for n in $IPMI_IPS ; do
       power_parameters_power_address=${n}
 done
 
-# Timeout for commissioning
+# Wait for commissioning
 sleep 180
-
-# Waiting for readiness
 i=0
 while [ $i -le 30 ] ; do
   MASHINES_STATUS=`maas $PROFILE machines read | jq -r '.[] | .status_name'`
-  if echo "$MASHINES_STATUS" | grep -q "Ready"; then
+  MASHINES_COUNT=`echo "$MASHINES_STATUS" | wc -l`
+  if [ "$MASHINES_COUNT" -eq 0 ]; then
+    echo "MAAS setup is complete, but there are no any ready-to-use machines"
+  fi
+  if echo "$MASHINES_STATUS" | grep -q "Ready"; then    
     READY_COUNT=`echo "$MASHINES_STATUS" | grep -c "Ready"`
-    if [ "$READY_COUNT" -ge 5 ]; then
-      echo "MAAS Ready"
+    if [ "$READY_COUNT" -ge "$MASHINES_COUNT" ]; then
+      echo "MAAS READY"
+      COMMISSIONING="success"
       break
     fi
   fi
   sleep 30
   i=$((i+1))
 done
+[[ -z "$COMMISSIONING" ]] && echo "ERROR: timeout exceeded" && exit 1
