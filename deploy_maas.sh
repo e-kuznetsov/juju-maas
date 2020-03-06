@@ -104,7 +104,7 @@ while [ $i -le 30 ] ; do
   MASHINES_COUNT=`echo "$MASHINES_STATUS" | wc -l`
   if [ -z $MASHINES_STATUS ]; then
     echo "MAAS setup is complete, but there are no any ready-to-use machines"
-    break
+    exit 0
   fi
   if echo "$MASHINES_STATUS" | grep -q "Ready"; then    
     READY_COUNT=`echo "$MASHINES_STATUS" | grep -c "Ready"`
