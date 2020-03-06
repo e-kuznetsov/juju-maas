@@ -80,7 +80,7 @@ while [ $i -le 30 ] ; do
   sleep 20
   i=$((i+1))
   if maas $PROFILE boot-resources is-importing | grep 'false'; then
-    sleep 15
+    sleep 60
     break
   fi
 done
