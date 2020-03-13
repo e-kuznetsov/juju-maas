@@ -59,7 +59,7 @@ maas $PROFILE maas set-config name=upstream_dns value=$UPSTREAM_DNS
 # Configure dhcp
 maas $PROFILE ipranges create type=dynamic \
     start_ip=${DHCP_RESERVATION_IP_START} end_ip=${DHCP_RESERVATION_IP_END}
-maas $PROFILE vlan update 0 0 dhcp_on=True primary_rack=maas-dev
+maas $PROFILE vlan update 0 0 dhcp_on=True primary_rack=$(hostname)
 
 # Import images. 
 # Import may fail without any error messages, loop is workaround.
