@@ -44,9 +44,9 @@ sudo maas init --mode all \
 # login
 export PATH="$PATH:/snap/bin"
 PROFILE="${MAAS_ADMIN}"
-MAAS_URL="http://${NODE_IP}:5240/MAAS/api/2.0"
-sudo maas apikey --username="$PROFILE" > ${MAAS_ADMIN}_API_KEY
-maas login $PROFILE $MAAS_URL - < ${MAAS_ADMIN}_API_KEY
+export MAAS_ENDPOINT="http://${NODE_IP}:5240/MAAS"
+export MAAS_API_KEY=$(sudo maas apikey --username="$PROFILE")
+maas login $PROFILE $MAAS_ENDPOINT - <<< $(echo $MAAS_API_KEY)
 
 # Add public key to user "admin"
 set_ssh_keys
